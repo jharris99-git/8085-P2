@@ -33,7 +33,7 @@ Linux instructions:
 #### Execution
 
 1. Make sure the above commands have been executed.
-[//]: # (2. Run `python3 src/NIDS.py <args>`)
+<!--2. Run `python3 src/NIDS.py <args>`-->
 \* Note that different operating systems may use different slash separators/
 
 #### Close

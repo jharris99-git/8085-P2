@@ -12,7 +12,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import BertTokenizer, BertModel
 
 DEBUG = True # whether to use tweak or train for prepro
-EXPERIMENT = False
+EXPERIMENT_BERT = True
 
 pd.set_option('display.max_rows', 300)
 pd.set_option('display.max_columns', 300)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     dataset_url = '../datasets/train.csv' if not DEBUG else '../datasets/tweak.csv'
 
     #
-    if EXPERIMENT: #  TODO: Figure out a way to do the preprocess_dataset over sections with consistent results
+    if EXPERIMENT_BERT: #  TODO: Figure out a way to do the preprocess_dataset over sections with consistent results
         chunk_list = []
         for chunk in pd.read_csv(dataset_url, chunksize=10000, sep='|'):
             chunk['processed_text'] = chunk['text'].apply(BERT_minimal_preprocess)

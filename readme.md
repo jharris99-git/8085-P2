@@ -7,7 +7,9 @@
 3. Set `./p2/Scripts/python.exe` as the python interpreter in your dev environment.
 4. Run `p2/Scripts/activate`.
 5. Run `python -m pip install -r requirements.txt`.
-6. Run `deactivate`.
+6. If supported, run `python -m pip install torch --index-url https://download.pytorch.org/whl/cu118`
+6. Else, run `python -m pip install torch`
+7. Run `deactivate`.
 
 Linux instructions:
 1. Make sure `python3-pip` and `virtualenv` are installed.
@@ -39,7 +41,7 @@ Linux instructions:
 #### Close
 
 1. Open terminal in the project root directory.
-2. Run `pip freeze > requirements.txt` to add any possible new requirements.
+2. Run `pip freeze --exclude torch > requirements.txt` to add any possible new requirements.
 3. Run `deactivate` to exit the virtual environment.
 
 Linux instructions:

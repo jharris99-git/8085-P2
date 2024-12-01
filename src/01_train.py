@@ -152,20 +152,20 @@ def load_checkpoint(model, optimizer, checkpoint_path):
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Kyle's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def kyle_main():
-    files = ['train_embeddings_0.csv.gz'  # ,
-             # 'train_embeddings_1.csv.gz',
-             # 'train_embeddings_2.csv.gz',
-             # 'train_embeddings_3.csv.gz',
-             # 'train_embeddings_4.csv.gz',
-             # 'train_embeddings_5.csv.gz',
-             # 'test_embeddings_0.csv.gz',
-             # 'test_embeddings_1.csv.gz'
+    files = [#'tweak_embeddings_0.csv.gz'
+             'train_embeddings_0.csv.gz'
+    #          'train_embeddings_1.csv.gz',
+    #          'train_embeddings_2.csv.gz',
+    #          'train_embeddings_3.csv.gz',
+    #          'train_embeddings_4.csv.gz',
+    #          'train_embeddings_5.csv.gz'
              ]
     train_data = load_and_concatenate_csvs(files)
+    print("Files concatenated")
     test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
 
     model = train_model(train_data, test_data)
-    # save_model(model, "../models/SVM_PCA100.pkl.gz")
+    save_model(model, "../models/SVM_PCA100.pkl.gz")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'J'
+    NAME = 'K'
 
     match NAME:
         case 'J':

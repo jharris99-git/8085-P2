@@ -2,7 +2,8 @@ import pandas as pd
 
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
+
 
 def train_model(train_data: pd.DataFrame, test_data: pd.DataFrame):
 
@@ -12,7 +13,7 @@ def train_model(train_data: pd.DataFrame, test_data: pd.DataFrame):
     test_data_y = train_data[['stars', 'useful', 'funny', 'cool']].values
     test_data_x = train_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1).values
 
-    model = MultiOutputClassifier(SVC(kernel='linear'), n_jobs=-1)
+    model = MultiOutputClassifier(LinearSVC(), n_jobs=-1)
     model.fit(train_data_x,train_data_y)
     pred_y = model.predict(test_data_x)
 

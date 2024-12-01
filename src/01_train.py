@@ -6,14 +6,17 @@ import pandas as pd
 import SVM
 from src.SVM import train_model
 
-def save_model(model, filename):
-    with gzip.open(filename, 'wb') as f:
-        pickle.dump(model, f)
-        print("Saved PCA model.")
+
 import numpy as np
 import torch
 
 # ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #
+
+def save_model(model, filename):
+    with gzip.open(filename, 'wb') as f:
+        pickle.dump(model, f)
+        print("Saved model.")
+
 
 def load_pca_model():
     with gzip.open('../models/PCA.pkl.gz', 'rb') as f:
@@ -22,6 +25,7 @@ def load_pca_model():
 
 def pca_inverse_transform(pca, pca_100):
     return pca.inverse_transform(pca_100)
+
 
 def load_and_concatenate_csvs(file_names, chunk_size=10000):
     df_list = []
@@ -51,15 +55,14 @@ def csv_files_to_nparray(file_list):
 def convert_to_cuda_tensor(np_array):
     return torch.tensor(np_array, device='cuda')
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-if __name__ == '__main__':
+# ~~~~~~~~~~~~~~~~~~~~~~~~ Kyle's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
-    files = ['train_embeddings_0.csv.gz'#,
+def kyle_main():
+    files = ['train_embeddings_0.csv.gz'  # ,
              # 'train_embeddings_1.csv.gz',
              # 'train_embeddings_2.csv.gz',
              # 'train_embeddings_3.csv.gz',
@@ -70,6 +73,18 @@ if __name__ == '__main__':
              ]
     train_data = load_and_concatenate_csvs(files)
     test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
+
+    model = train_model(train_data, test_data)
+    # save_model(model, "../models/SVM_PCA100.pkl.gz")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+if __name__ == '__main__':
+
+
     # base_data = pd.read_csv('../datasets/', low_memory=False)
 
     # base_data = process_data(base_data) # preprocess
@@ -80,9 +95,7 @@ if __name__ == '__main__':
         case 'J':
             pass
         case 'K':
-            model = train_model(train_data, test_data)
-            # save_model(model, "../models/SVM_PCA100.pkl.gz")
-            pass
+            kyle_main()
         case 'L':
             pass
         case _:

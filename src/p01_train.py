@@ -13,6 +13,8 @@ from src.SVM import train_model
 import numpy as np
 import torch
 
+torch.set_default_dtype(torch.float32)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def save_model(model, filename):
@@ -56,13 +58,11 @@ def csv_file_to_nparray(file_name):
 
 
 def convert_to_cuda_tensor(np_array):
-    return torch.tensor(np_array, device='cuda')
+    return torch.tensor(np_array, device='cuda', dtype=torch.float32)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def joe_main():
-    torch.set_default_dtype(torch.float32)
-
     model = ReviewNet()
     optimizer = optim.Adam(model.parameters())
 
@@ -104,7 +104,7 @@ class ReviewNet(nn.Module):
         return self.layers(x)
 
 
-def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=32, num_epochs=10):
+def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epochs=50):
     criterion = nn.MSELoss()
     model.to('cuda')
 
@@ -117,8 +117,8 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=32, num_epoc
             pbar = tqdm(range(0, len(data), batch_size), desc=f"Epoch {epoch+1}/{num_epochs}, File {file_idx+1}/{len(file_list)}")
             for i in pbar:
                 batch = data[i:i+batch_size]
-                inputs = convert_to_cuda_tensor(batch[:, :100])
-                targets = convert_to_cuda_tensor(batch[:, 100:])
+                inputs = convert_to_cuda_tensor(batch[:, :100]).float()
+                targets = convert_to_cuda_tensor(batch[:, 100:]).float()
 
                 optimizer.zero_grad()
                 outputs = model(inputs)

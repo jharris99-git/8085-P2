@@ -92,7 +92,7 @@ def joe_main():
 class ReviewNet(nn.Module):
     def __init__(self, dropout_rate=0.2):
         super(ReviewNet, self).__init__()
-        self.layers = nn.Sequential(
+        self.common_layers = nn.Sequential(
             nn.Linear(100, 64),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
@@ -101,9 +101,7 @@ class ReviewNet(nn.Module):
             nn.Dropout(dropout_rate),
             nn.Linear(42, 18),
             nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(18, 4),
-            nn.ReLU()  # Ensure non-negative outputs
+            nn.Dropout(dropout_rate)
         )
         self.stars_output = nn.Linear(18, 6)  # 6 classes for 0 to 5 stars
         self.other_outputs = nn.Linear(18, 3)  # for useful, funny, cool
@@ -120,7 +118,7 @@ class ReviewNet(nn.Module):
         return torch.cat((stars_output.unsqueeze(1), other_outputs), dim=1)
 
 
-def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=32, num_epochs=300, patience=10):
+def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epochs=300, patience=20):
     criterion = nn.MSELoss()
     model.to('cuda')
 

@@ -2,24 +2,27 @@ import pandas as pd
 
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC, LinearSVC
 
 
-def train_model(train_data: pd.DataFrame, test_data: pd.DataFrame):
+def train_model(train_data: pd.DataFrame):
 
-    train_data_y = train_data[['stars', 'useful', 'funny', 'cool']].values
-    train_data_x = train_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1).values
+    train_data_y = train_data[['stars', 'useful', 'funny', 'cool']]
+    train_data_x = train_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
 
-    test_data_y = train_data[['stars', 'useful', 'funny', 'cool']].values
-    test_data_x = train_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1).values
-
-    model = MultiOutputClassifier(LinearSVC(), n_jobs=-1)
+    model = MultiOutputClassifier(LinearSVC(verbose=1), n_jobs=-1)
     model.fit(train_data_x,train_data_y)
-    pred_y = model.predict(test_data_x)
-
-    print ("\nHere is the classification report:")
-    for true, pred in zip(test_data_y.T, pred_y.T):
-        print(set(true) - set(pred))
-        print (classification_report(y_true=true, y_pred=pred))
 
     return model
+
+def use_model(model, test_data: pd.DataFrame):
+    test_data_y = test_data[['stars', 'useful', 'funny', 'cool']].values
+    test_data_x = test_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+
+    # Predict using the input data rows.
+    y_pred = model.predict(test_data_x)
+
+    print("\nHere is the classification report:")
+    for true, pred in zip(test_data_y.T, y_pred.T):
+        print(set(true) - set(pred))
+        print(classification_report(y_true=true, y_pred=pred))

@@ -1,12 +1,22 @@
 # use *validation* not test here
 import numpy as np
 import torch
+import gzip
+import pickle
+import SVM
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_squared_error
 from torch import optim, nn
 
-from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray
+from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray, load_and_concatenate_csvs
+
 
 torch.set_default_dtype(torch.float32)
+# ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #
+
+def load_model(filename):
+    with gzip.open(filename, 'rb') as f:
+        return pickle.load(f)
+
 
 def find_robust_max_discrepancy(true_others, pred_others, percentile=99):
     abs_diff = np.abs(true_others - pred_others)
@@ -121,6 +131,36 @@ def joe_main():
             print("Model performance needs improvement (score <= 0.5)")
 
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~ Kyle's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
+
+def kyle_main():
+    file_list = [
+        'test_embeddings_0.csv.gz'  # ,
+        # 'test_embeddings_1.csv.gz'
+    ]
+    data = load_and_concatenate_csvs(file_list)
+    model = load_model("../models/SVM_PCA100.pkl.gz")
+    # SVM.use_model(model, data)
+    # model.eval()
+    test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+    test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+    pred_y = model.predict(test_data_x)
+    evaluation_results = evaluate_model(test_data_y, pred_y, True)
+    print("Evaluation Results:")
+    for metric, value in evaluation_results.items():
+        if metric != 'continuous':
+            print(f"{metric}: {value:.4f}")
+
+    # Check if the combined score is greater than 0.5
+    if evaluation_results['combined_score'] > 0.5:
+        print("Model performance is satisfactory (score > 0.5)")
+    else:
+        print("Model performance needs improvement (score <= 0.5)")
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
 
@@ -129,13 +169,13 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'J'
+    NAME = 'K'
 
     match NAME:
         case 'J':
             joe_main()
         case 'K':
-            # kyle_main()
+            kyle_main()
             pass
         case 'L':
             pass

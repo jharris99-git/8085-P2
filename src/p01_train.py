@@ -8,7 +8,7 @@ from torch import nn, optim
 from tqdm import tqdm
 
 import SVM
-from src.SVM import train_model
+from src.SVM import train_model, use_model
 
 import numpy as np
 import torch
@@ -187,18 +187,19 @@ def load_checkpoint(model, optimizer, checkpoint_path):
 
 def kyle_main():
     files = [#'tweak_embeddings_0.csv.gz'
-             'train_embeddings_0.csv.gz'
-    #          'train_embeddings_1.csv.gz',
-    #          'train_embeddings_2.csv.gz',
-    #          'train_embeddings_3.csv.gz',
-    #          'train_embeddings_4.csv.gz',
-    #          'train_embeddings_5.csv.gz'
+             'train_embeddings_0.csv.gz',
+             'train_embeddings_1.csv.gz',
+             'train_embeddings_2.csv.gz',
+             'train_embeddings_3.csv.gz',
+             'train_embeddings_4.csv.gz',
+             'train_embeddings_5.csv.gz'
              ]
     train_data = load_and_concatenate_csvs(files)
-    print("Files concatenated")
     test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
+    print("Files concatenated")
 
-    model = train_model(train_data, test_data)
+    model = train_model(train_data)
+    use_model(model, test_data)
     save_model(model, "../models/SVM_PCA100.pkl.gz")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #

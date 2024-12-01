@@ -184,14 +184,7 @@ def is_float(value):
 
 
 if __name__ == '__main__':
-    files = ['train_embeddings_0.csv',
-             'train_embeddings_1.csv',
-             'train_embeddings_2.csv',
-             'train_embeddings_3.csv',
-             'train_embeddings_4.csv',
-             'train_embeddings_5.csv',
-             'test_embeddings_0.csv',
-             'test_embeddings_1.csv']
+    files = ['tweak_embeddings_0.csv']
 
     output_directory = '../datasets/'
 

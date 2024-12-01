@@ -1,4 +1,4 @@
-# COMP 8085 Project 1
+# COMP 8085 Project 2
 
 ## Installation
 

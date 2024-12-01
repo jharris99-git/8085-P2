@@ -6,8 +6,23 @@ from torch import optim, nn
 
 from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray
 
+torch.set_default_dtype(torch.float32)
 
-def evaluate_model(true_values, predicted_values, continuous):
+def find_robust_max_discrepancy(true_others, pred_others, percentile=99):
+    abs_diff = np.abs(true_others - pred_others)
+    total_diff_per_sample = np.sum(abs_diff, axis=1)
+    robust_max = np.percentile(total_diff_per_sample, percentile)
+    return robust_max
+
+
+def robust_log_normalized_mae(true_others, pred_others, mae, percentile=99):
+    robust_max = find_robust_max_discrepancy(true_others, pred_others, percentile)
+    normalized_mae = np.log1p(mae) / np.log1p(robust_max)
+    return 1 - normalized_mae
+
+
+def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
+
     # Separate stars from other metrics
     true_stars = true_values[:, 0]
     pred_stars = predicted_values[:, 0]
@@ -15,20 +30,21 @@ def evaluate_model(true_values, predicted_values, continuous):
     pred_others = predicted_values[:, 1:]
 
     mae = mean_absolute_error(true_others, pred_others)
-    rmse = np.sqrt(mean_squared_error(true_others, pred_others))
+    mae_score = robust_log_normalized_mae(true_others, pred_others, mae)
 
     if continuous:
-        stars_mse = mean_squared_error(true_stars, pred_stars)
         stars_mae = mean_absolute_error(true_stars, pred_stars)
 
-        combined_score = ((1 - stars_mae / 5) + (1 - stars_mse / 5) + (1 - mae / 5) + (1 - rmse / 5)) / 4
+        max_star_error = 5
+        normalized_stars_mae = stars_mae / max_star_error
+        stars_mae_score = 1 - normalized_stars_mae
+
+        combined_score = (weights[0] * stars_mae_score + weights[1] * mae_score) / sum(weights)
 
         return {
             'continuous': continuous,
-            'stars_mae': stars_mae,
-            'stars_mse': stars_mse,
-            'other_mae': mae,
-            'other_rmse': rmse,
+            'stars_mae_score': stars_mae,
+            'mae_score': mae_score,
             'combined_score': combined_score
         }
 
@@ -39,32 +55,34 @@ def evaluate_model(true_values, predicted_values, continuous):
         stars_accuracy = accuracy_score(true_stars, pred_stars)
         stars_f1 = f1_score(true_stars, pred_stars, average='weighted')
 
-        combined_score = (stars_accuracy + stars_f1 + (1 - mae / 5) + (1 - rmse / 5)) / 4
+        combined_score = (weights[0] * ((stars_accuracy + stars_f1) / 2) + weights[1] * mae_score) / sum(weights)
 
         return {
             'continuous': continuous,
             'stars_accuracy': stars_accuracy,
             'stars_f1': stars_f1,
-            'other_mae': mae,
-            'other_rmse': rmse,
+            'mae_score': mae_score,
             'combined_score': combined_score
         }
-
-    # Compute metrics for other outputs
-
-
-    # Combine into a single score (you can adjust weights as needed)
-    #
 
 
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
+def test_model(model, test_data, if_cuda):
+    model.eval()
+    with torch.no_grad():
+        inputs = convert_to_cuda_tensor(test_data[:, :100])
+        outputs = model(inputs)
+        if if_cuda:
+            return outputs.cpu().numpy()
+        else:
+            return outputs.numpy()
+
 
 def joe_main():
     model = ReviewNet()
-    optimizer = optim.Adam(model.parameters())
 
     file_list = [
         'test_embeddings_0.csv.gz',
@@ -74,36 +92,33 @@ def joe_main():
     model.load_state_dict(torch.load(f'../models/best_model.pth'))
     model.eval()
     model.to('cuda')
-
-    tensor = csv_file_to_nparray(f'test_embeddings_0.csv.gz')
+    tensor = None
+    for filename in file_list:
+        file_tensor = csv_file_to_nparray(filename)
+        if tensor is None:
+            tensor = file_tensor
+        else:
+            tensor = np.concatenate((np.array(tensor), np.array(file_tensor)), axis=0)
     with torch.no_grad():
         inputs = convert_to_cuda_tensor(tensor[:, :100]).float()
         targets = convert_to_cuda_tensor(tensor[:, 100:]).float()
         outputs = model(inputs)
-        rounded_outputs = torch.round(outputs).int()
 
         true_values = targets.cpu().numpy()
-        pred_values = outputs.cpu().numpy() # or # rounded_outputs.cpu().numpy()
+        pred_values = outputs.cpu().numpy()
 
         evaluation_results = evaluate_model(true_values, pred_values, True)
 
         print("Evaluation Results:")
         for metric, value in evaluation_results.items():
-            print(f"{metric}: {value:.4f}")
+            if metric != 'continuous':
+                print(f"{metric}: {value:.4f}")
 
         # Check if the combined score is greater than 0.5
         if evaluation_results['combined_score'] > 0.5:
             print("Model performance is satisfactory (score > 0.5)")
         else:
             print("Model performance needs improvement (score <= 0.5)")
-
-        # comp = zip(targets, rounded_outputs)
-        # for true, pred in comp:
-        #     print(f'True  Stars: {true[0].item():.2f}  Pred. Stars: {pred[0].item():.2f}  Loss: {(true[0].item() - pred[0].item())**2:.4f}\n'
-        #           f'True  Useful: {true[1].item():.2f} Pred. Useful: {pred[1].item():.2f} Loss: {(true[1].item() - pred[1].item())**2:.4f}\n'
-        #           f'True  Funny: {true[2].item():.2f}  Pred. Funny: {pred[2].item():.2f}  Loss: {(true[2].item() - pred[2].item())**2:.4f}\n'
-        #           f'True  Cool: {true[3].item():.2f}   Pred. Cool: {pred[3].item():.2f}   Loss: {(true[3].item() - pred[3].item())**2:.4f}\n')
-
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #

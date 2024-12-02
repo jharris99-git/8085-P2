@@ -8,6 +8,7 @@ from torch import nn, optim
 from tqdm import tqdm
 
 import SVM
+from src.NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm
 from src.SVM import train_model, use_model
 
 import numpy as np
@@ -63,7 +64,7 @@ def convert_to_cuda_tensor(np_array):
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def joe_main():
-    model = ReviewNet(dropout_rate=0.2)
+    model = ReviewNetLarge(dropout_rate=0.2)
     optimizer = optim.Adam(model.parameters())
 
     file_list = [
@@ -79,9 +80,14 @@ def joe_main():
     checkpoint_files = [f for f in os.listdir('../models') if f.startswith('checkpoint_')]
     if checkpoint_files:
         latest_checkpoint = max(checkpoint_files, key=lambda x: int(x.split('_')[2].split('.')[0]))
-        checkpoint = torch.load(f'../models/{latest_checkpoint}')
+        checkpoint = torch.load(f'../models/{latest_checkpoint}', map_location='cuda')
         model.load_state_dict(checkpoint['model_state_dict'])
+        model.to('cuda')  # Move model to GPU
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.cuda()  # Move optimizer state to GPU
         start_epoch = checkpoint['epoch']
     else:
         start_epoch = 0
@@ -89,67 +95,52 @@ def joe_main():
     train_nn(model, optimizer, file_list, start_epoch, patience=5)
 
 
-class ReviewNet(nn.Module):
-    def __init__(self, dropout_rate=0.2):
-        super(ReviewNet, self).__init__()
-        self.common_layers = nn.Sequential(
-            nn.Linear(100, 64),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(64, 42),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(42, 18),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate)
-        )
-        self.stars_output = nn.Linear(18, 6)  # 6 classes for 0 to 5 stars
-        self.other_outputs = nn.Linear(18, 3)  # for useful, funny, cool
-
-    def forward(self, x):
-        common_features = self.common_layers(x)
-
-        stars_logits = self.stars_output(common_features)
-        stars_probs = nn.functional.softmax(stars_logits, dim=1)
-        stars_output = torch.sum(stars_probs * torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]).to(x.device), dim=1)
-
-        other_outputs = nn.functional.relu(self.other_outputs(common_features))  # Ensure non-negative outputs
-
-        return torch.cat((stars_output.unsqueeze(1), other_outputs), dim=1)
-
-
-def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epochs=300, patience=20):
-    criterion = nn.MSELoss()
+# Modified/made more complex for Model 2+
+def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epochs=300, patience=5):
+    criterion = ordinal_loss
     model.to('cuda')
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.5)
 
     best_loss = float('inf')
     patience_counter = 0
     best_model = None
 
+    data = None
+    for filename in file_list:
+        file_data = csv_file_to_nparray(filename)
+        if data is None:
+            data = file_data
+        else:
+            data = np.concatenate((np.array(data), np.array(file_data)), axis=0)
+
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0.0
-        for file_idx, file_name in enumerate(file_list):
-            data = csv_file_to_nparray(file_name)
-            np.random.shuffle(data)
+        n_iter = 0
 
-            pbar = tqdm(range(0, len(data), batch_size), desc=f"Epoch {epoch+1}/{num_epochs}, File {file_idx+1}/{len(file_list)}")
-            for i in pbar:
-                batch = data[i:i+batch_size]
-                inputs = convert_to_cuda_tensor(batch[:, :100])
-                targets = convert_to_cuda_tensor(batch[:, 100:])
+        np.random.shuffle(data)
 
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-                loss.backward()
-                optimizer.step()
+        pbar = tqdm(range(0, len(data), batch_size), desc=f"Epoch {epoch+1}/{num_epochs}")
+        for i in pbar:
+            batch = data[i:i+batch_size]
+            inputs = convert_to_cuda_tensor(batch[:, :100])
+            targets = convert_to_cuda_tensor(batch[:, 100:])
 
-                epoch_loss += loss.item()
-                pbar.set_postfix({'loss': f'{loss.item():.4f}'})
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
 
-        avg_loss = epoch_loss / len(file_list)
+            epoch_loss += loss.item()
+            n_iter += 1
+            pbar.set_postfix({'loss': f'{loss.item():.4f}'})
+
+        avg_loss = epoch_loss / n_iter
         print(f"Epoch {epoch+1} completed. Average loss: {avg_loss:.4f}")
+
+        scheduler.step(avg_loss)
 
         # Early stopping check
         if avg_loss < best_loss:
@@ -175,6 +166,23 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
     # Save the best model
     if best_model is not None:
         torch.save(best_model, f'../models/best_model.pth')
+
+
+def ordinal_loss(predictions, targets):
+    stars_pred = predictions[:, 0]
+    stars_true = targets[:, 0]
+    other_pred = predictions[:, 1:]
+    other_true = targets[:, 1:]
+
+    # MSE for other outputs
+    mse_loss = nn.MSELoss()(other_pred, other_true)
+
+    # Ordinal regression loss for stars
+    levels = torch.arange(6).float().to(predictions.device)
+    diff = (stars_pred.unsqueeze(1) - levels.unsqueeze(0)).abs()
+    ord_loss = torch.mean((diff - (stars_true.unsqueeze(1) - levels.unsqueeze(0)).abs()).pow(2))
+
+    return mse_loss + ord_loss
 
 
 def load_checkpoint(model, optimizer, checkpoint_path):
@@ -214,7 +222,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'K'
+    NAME = 'J'
 
     match NAME:
         case 'J':

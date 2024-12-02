@@ -32,7 +32,6 @@ def robust_log_normalized_mae(true_others, pred_others, mae, percentile=99):
 
 
 def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
-
     # Separate stars from other metrics
     true_stars = true_values[:, 0]
     pred_stars = predicted_values[:, 0]
@@ -53,7 +52,7 @@ def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
 
         return {
             'continuous': continuous,
-            'stars_mae_score': stars_mae,
+            'stars_mae_score': stars_mae_score,
             'mae_score': mae_score,
             'combined_score': combined_score
         }
@@ -74,8 +73,6 @@ def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
             'mae_score': mae_score,
             'combined_score': combined_score
         }
-
-
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -99,7 +96,7 @@ def joe_main():
         'test_embeddings_1.csv.gz'
     ]
 
-    model.load_state_dict(torch.load(f'../models/best_model.pth'))
+    model.load_state_dict(torch.load(f'../models/best_model.pth', weights_only=True))
     model.eval()
     model.to('cuda')
     tensor = None
@@ -136,8 +133,8 @@ def joe_main():
 
 def kyle_main():
     file_list = [
-        'test_embeddings_0.csv.gz'  # ,
-        # 'test_embeddings_1.csv.gz'
+        'test_embeddings_0.csv.gz',
+        'test_embeddings_1.csv.gz'
     ]
     data = load_and_concatenate_csvs(file_list)
     model = load_model("../models/SVM_PCA100.pkl.gz")
@@ -164,13 +161,7 @@ def kyle_main():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
 
-
-    # base_data = pd.read_csv('../datasets/', low_memory=False)
-
-    # base_data = process_data(base_data) # preprocess
-
-    NAME = 'K'
-
+    NAME = 'J'
     match NAME:
         case 'J':
             joe_main()

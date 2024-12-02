@@ -92,6 +92,8 @@ def joe_main():
     else:
         start_epoch = 0
 
+    # torch.save(model.state_dict(), f'../models/best_model_nn2.pth')
+
     train_nn(model, optimizer, file_list, start_epoch, patience=5)
 
 
@@ -165,7 +167,7 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
 
     # Save the best model
     if best_model is not None:
-        torch.save(best_model, f'../models/best_model.pth')
+        torch.save(best_model, f'../models/best_model_nn2.pth')
 
 
 def ordinal_loss(predictions, targets):

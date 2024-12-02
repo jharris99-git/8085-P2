@@ -27,7 +27,7 @@ if __name__ == '__main__':
             tensor = csv_file_to_nparray(file)
 
             model = ReviewNet()
-            model.load_state_dict(torch.load(f'../models/best_model_nn1.pth', weights_only=True))
+            model.load_state_dict(torch.load(f'../models/best_model_nn2.pth', weights_only=True))
             model.eval()
 
             is_cuda = True if torch.cuda.is_available() else False

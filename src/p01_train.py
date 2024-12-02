@@ -14,9 +14,6 @@ from src.SVM import train_model, use_model
 import numpy as np
 import torch
 
-from collections import defaultdict
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -223,16 +220,17 @@ def kyle_main():
 
 
 def lukasz_main():
-    train_files = ['train_embeddings_0.csv.gz']
-                   # 'train_embeddings_2.csv.gz',
-                   # 'train_embeddings_1.csv.gz',
-                   # 'train_embeddings_3.csv.gz',
-                   # 'train_embeddings_4.csv.gz',
-                   # 'train_embeddings_5.csv.gz']
-    test_files = ['test_embeddings_0.csv.gz']  # 'test_embeddings_1.csv.gz']
+    train_files = ['train_embeddings_0.csv.gz',
+                   'train_embeddings_2.csv.gz',
+                   'train_embeddings_1.csv.gz',
+                   'train_embeddings_3.csv.gz',
+                   'train_embeddings_4.csv.gz',
+                   'train_embeddings_5.csv.gz'
+    ]
+    test_files = ['test_embeddings_0.csv.gz', 'test_embeddings_1.csv.gz']
 
     train_data = load_and_concatenate_csvs(train_files)
-    test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
+    test_data = load_and_concatenate_csvs(test_files)
     model = lukasz_train(train_data, test_data)
     save_model(model, "../models/NB_PCA100.pkl.gz")
 
@@ -315,7 +313,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'K'
+    NAME = 'L'
 
     match NAME:
         case 'J':

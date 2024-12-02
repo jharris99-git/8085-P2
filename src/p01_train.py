@@ -14,6 +14,13 @@ from src.SVM import train_model, use_model
 import numpy as np
 import torch
 
+from collections import defaultdict
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB, GaussianNB
+from sklearn.metrics import classification_report
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.base import BaseEstimator, ClassifierMixin
+
 torch.set_default_dtype(torch.float32)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -33,7 +40,7 @@ def pca_inverse_transform(pca, pca_100):
     return pca.inverse_transform(pca_100)
 
 
-def load_and_concatenate_csvs(file_names, chunk_size=10000):
+def load_and_concatenate_csvs(file_names, chunk_size=10_000):
     df_list = []
     for file_name in file_names:
         input_file_path = '../datasets/' + file_name
@@ -215,6 +222,90 @@ def kyle_main():
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 
+def lukasz_main():
+    train_files = ['train_embeddings_0.csv.gz']
+                   # 'train_embeddings_2.csv.gz',
+                   # 'train_embeddings_1.csv.gz',
+                   # 'train_embeddings_3.csv.gz',
+                   # 'train_embeddings_4.csv.gz',
+                   # 'train_embeddings_5.csv.gz']
+    test_files = ['test_embeddings_0.csv.gz']  # 'test_embeddings_1.csv.gz']
+
+    train_data = load_and_concatenate_csvs(train_files)
+    test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
+    model = lukasz_train(train_data, test_data)
+    save_model(model, "../models/NB_PCA100.pkl.gz")
+
+
+def lukasz_train(train_data: pd.DataFrame, test_data: pd.DataFrame):
+    target_names = ['stars', 'useful', 'funny', 'cool']
+    train_data_y = train_data[target_names].values
+    train_data_x = train_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1).values
+
+    test_data_y = test_data[['stars', 'useful', 'funny', 'cool']].values
+    test_data_x = test_data.drop(['stars', 'useful', 'funny', 'cool'], axis=1).values
+
+    # train model
+    model = MultiOutputClassifier(CustomGaussianNB())
+    model.fit(train_data_x, train_data_y)
+
+    # predict
+    y_pred = model.predict(test_data_x)
+
+    # Evaluate
+    print("Classification Report:")
+    for i, target in enumerate(['stars', 'useful', 'funny', 'cool']):
+        print(f"\nTarget: {target}")
+        print(classification_report(test_data_y[:, i], y_pred[:, i]))
+
+    return model
+
+
+class CustomGaussianNB(BaseEstimator, ClassifierMixin):
+    def __init__(self):
+        self.class_stats = {}
+
+    def fit(self, x, y):
+        """
+        Train the Naive Bayes classifier.
+        X: Feature matrix (2D array)
+        y: Target vector (1D array)
+        """
+        self.classes_ = np.unique(y)
+        for cls in self.classes_:
+            X_cls = x[y == cls]
+            self.class_stats[cls] = {
+                "mean": np.mean(X_cls, axis=0),
+                "var": np.var(X_cls, axis=0) + 1e-6,  # Add small value to avoid division by zero
+                "prior": len(X_cls) / len(x),
+            }
+        return self
+
+    def predict(self, x):
+        """
+        Predict the class for each sample in X.
+        X: Feature matrix (2D array)
+        """
+        log_posteriors = []
+        debug_sample_loops = 0
+        for cls, stats in self.class_stats.items():
+            mean, var, prior = stats["mean"], stats["var"], stats["prior"]
+            print(debug_sample_loops)
+
+            # Vectorized computation for likelihood
+            log_likelihood = -0.5 * np.sum(np.log(2 * np.pi * var))  # Normalization
+            log_likelihood -= 0.5 * np.sum(((x - mean) ** 2) / var, axis=1)  # Exponent
+
+            # Add prior
+            log_posterior = np.log(prior) + log_likelihood
+            log_posteriors.append(log_posterior)
+
+            debug_sample_loops += 1
+
+        # Combine all class probabilities and choose the best
+        log_posteriors = np.array(log_posteriors).T  # Transpose for (samples, classes)
+        return np.argmax(log_posteriors, axis=1)  # Class with max posterior
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
@@ -224,7 +315,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'J'
+    NAME = 'K'
 
     match NAME:
         case 'J':
@@ -232,6 +323,6 @@ if __name__ == '__main__':
         case 'K':
             kyle_main()
         case 'L':
-            pass
+            lukasz_main()
         case _:
             pass

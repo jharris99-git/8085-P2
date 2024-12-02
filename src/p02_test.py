@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_
 from torch import optim, nn
 
 from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray, load_and_concatenate_csvs
+from p01_train import CustomGaussianNB
 
 
 torch.set_default_dtype(torch.float32)
@@ -158,10 +159,41 @@ def kyle_main():
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
+def lukasz_main():
+    file_list = [
+        'test_embeddings_1.csv.gz'  # ,
+        # 'test_embeddings_1.csv.gz'
+    ]
+    data = load_and_concatenate_csvs(file_list)
+    model = load_model("../models/NB_PCA100.pkl.gz")
+
+    test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+    test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+
+    pred_y = model.predict(test_data_x)
+    evaluation_results = evaluate_model(test_data_y, pred_y, True)
+
+    print("Evaluation Results:")
+    for metric, value in evaluation_results.items():
+        if metric != 'continuous':
+            print(f"{metric}: {value:.4f}")
+
+    # Check if the combined score is greater than 0.5
+    if evaluation_results['combined_score'] > 0.5:
+        print("Model performance is satisfactory (score > 0.5)")
+    else:
+        print("Model performance needs improvement (score <= 0.5)")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
 
-    NAME = 'J'
+
+    # base_data = pd.read_csv('../datasets/', low_memory=False)
+
+    # base_data = process_data(base_data) # preprocess
+
+    NAME = 'L'
+
     match NAME:
         case 'J':
             joe_main()
@@ -169,6 +201,6 @@ if __name__ == '__main__':
             kyle_main()
             pass
         case 'L':
-            pass
+            lukasz_main()
         case _:
             pass

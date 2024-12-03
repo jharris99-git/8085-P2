@@ -4,6 +4,7 @@ import gzip
 import os
 import pickle
 import pandas as pd
+from sklearn.feature_selection import SelectKBest, chi2
 from torch import nn, optim
 from tqdm import tqdm
 
@@ -17,6 +18,8 @@ import torch
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.preprocessing import MinMaxScaler
+
 
 torch.set_default_dtype(torch.float32)
 
@@ -29,7 +32,7 @@ def save_model(model, filename):
 
 
 def load_pca_model():
-    with gzip.open('../models/PCA.pkl.gz', 'rb') as f:
+    with gzip.open('../models/pca_model.pkl.gz', 'rb') as f:
         return pickle.load(f)
 
 
@@ -228,11 +231,18 @@ def lukasz_main():
                    'train_embeddings_5.csv.gz'
     ]
     test_files = ['test_embeddings_0.csv.gz', 'test_embeddings_1.csv.gz']
-
     train_data = load_and_concatenate_csvs(train_files)
     test_data = load_and_concatenate_csvs(test_files)
-    model = lukasz_train(train_data, test_data)
-    save_model(model, "../models/NB_PCA100.pkl.gz")
+
+    # 1st experiment
+    # model = lukasz_train(train_data, test_data)
+    # save_model(model, "../models/NB_PCA100.pkl.gz")
+
+    # 2nd experiment, same NB (probabilistic) model with chi-square feature selection for each target
+    # lukasz_chi_square_feat_select_experiment_two(train_data, test_data)
+
+    # 3rd experiment
+    lukasz_experiment_three_star_rating_ablation_study(train_data, test_data)
 
 
 def lukasz_train(train_data: pd.DataFrame, test_data: pd.DataFrame):
@@ -257,6 +267,14 @@ def lukasz_train(train_data: pd.DataFrame, test_data: pd.DataFrame):
         print(classification_report(test_data_y[:, i], y_pred[:, i]))
 
     return model
+
+
+def lukasz_experiment_three_star_rating_ablation_study(train_data: pd.DataFrame, test_data: pd.DataFrame):
+    for index in range(1, 6):
+        filtered_train_data = train_data[train_data['stars'] != index]
+        filtered_test_data = test_data[test_data['stars'] != index]
+        model = lukasz_train(filtered_train_data, filtered_test_data)
+        save_model(model, f'../models/NB_no_{index}_stars_PCA100.pkl.gz')
 
 
 class CustomGaussianNB(BaseEstimator, ClassifierMixin):

@@ -161,28 +161,65 @@ def kyle_main():
 
 def lukasz_main():
     file_list = [
-        'test_embeddings_1.csv.gz'  # ,
-        # 'test_embeddings_1.csv.gz'
+        'test_embeddings_0.csv.gz',
+        'test_embeddings_1.csv.gz'
     ]
     data = load_and_concatenate_csvs(file_list)
-    model = load_model("../models/NB_PCA100.pkl.gz")
+
+    lukasz_test_experiment_three(data)
+
+    # model = load_model("../models/NB_no_2_stars_PCA100.pkl.gz")
+    #
+    # test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+    # test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+    #
+    # pred_y = model.predict(test_data_x)
+    # evaluation_results = evaluate_model(test_data_y, pred_y, True)
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
+    #
+    # # Check if the combined score is greater than 0.5
+    # if evaluation_results['combined_score'] > 0.5:
+    #     print("Model performance is satisfactory (score > 0.5)")
+    # else:
+    #     print("Model performance needs improvement (score <= 0.5)")
+
+    # do_feature_selections(data)
+
+
+def lukasz_test_experiment_three(data):
+    models = [
+        load_model("../models/NB_no_1_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_2_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_3_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_4_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_5_stars_PCA100.pkl.gz")
+    ]
 
     test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
     test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
 
-    pred_y = model.predict(test_data_x)
-    evaluation_results = evaluate_model(test_data_y, pred_y, True)
+    index = 1
+    for model in models:
+        pred_y = model.predict(test_data_x)
+        evaluation_results = evaluate_model(test_data_y, pred_y, True)
 
-    print("Evaluation Results:")
-    for metric, value in evaluation_results.items():
-        if metric != 'continuous':
-            print(f"{metric}: {value:.4f}")
+        print(f"Evaluation Results (model trained without {index} star ratings):")
+        for metric, value in evaluation_results.items():
+            if metric != 'continuous':
+                print(f"{metric}: {value:.4f}")
 
-    # Check if the combined score is greater than 0.5
-    if evaluation_results['combined_score'] > 0.5:
-        print("Model performance is satisfactory (score > 0.5)")
-    else:
-        print("Model performance needs improvement (score <= 0.5)")
+        # Check if the combined score is greater than 0.5
+        if evaluation_results['combined_score'] > 0.5:
+            print("Model performance is satisfactory (score > 0.5)")
+        else:
+            print("Model performance needs improvement (score <= 0.5)")
+
+        index += 1
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':

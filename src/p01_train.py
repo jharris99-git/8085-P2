@@ -268,6 +268,104 @@ def lukasz_train(train_data: pd.DataFrame, test_data: pd.DataFrame):
 
     return model
 
+def lukasz_chi_square_feat_select_experiment_two(train_data: pd.DataFrame, test_data: pd.DataFrame):
+    # foo = load_pca_model()
+    target_names = ['stars', 'useful', 'funny', 'cool']
+    chi2_features = {}
+
+    # Split features and targets
+    train_data_x = train_data.drop(target_names, axis=1).values
+    test_data_x = test_data.drop(target_names, axis=1).values
+    train_data_y = train_data[target_names]
+    test_data_y = test_data[target_names]
+
+    # Transform features to the range [0, 1]
+    scaler = MinMaxScaler()
+    train_data_x_scaled = scaler.fit_transform(train_data_x)
+    test_data_x_scaled = scaler.transform(test_data_x)
+
+    selected_features = {}
+    models = {}
+
+    print("Performing Chi-Square Feature Selection and Training Models...\n")
+    # Perform feature selection and train a model for each target
+    for target in target_names:
+        # Perform Chi-Square feature selection for the current target
+        selector = SelectKBest(score_func=chi2, k=10)
+        selector.fit(train_data_x_scaled, train_data_y[target])
+        selected_indices = selector.get_support(indices=True)
+        selected_features[target] = selected_indices
+
+        # Select features for the current target
+        train_x_selected = train_data_x_scaled[:, selected_indices]
+        test_x_selected = test_data_x_scaled[:, selected_indices]
+
+        # Train GaussianNB for the current target
+        model = CustomGaussianNB()
+        model.fit(train_x_selected, train_data_y[target])
+        models[target] = model
+
+        # Predict and evaluate
+        y_pred = model.predict(test_x_selected)
+        print(f"Classification Report for Target: {target}")
+        print(classification_report(test_data_y[target], y_pred))
+        print("-" * 50)
+
+        save_model(model, f"../models/NB_CHI_{target}_PCA100.pkl.gz")
+
+    # for target in target_names:
+    #     train_data_y = train_data[target].values
+    #     train_data_x = train_data.drop(target, axis=1).values
+    #
+    #     # Transform features to the range [0, 1]
+    #     scaler = MinMaxScaler()
+    #     train_data_x_scaled = scaler.fit_transform(train_data_x)
+    #     # test_data_x_scaled = scaler.transform(test_data_x)
+    #
+    #     # batch_size = 1000  # Number of features to process at a time
+    #     # scores = []
+    #     # for start in range(0, train_data_x_scaled.shape[1], batch_size):
+    #     #     end = start + batch_size
+    #     #     x_batch = train_data_x_scaled[:, start:end]
+    #     #     chi2_scores, _ = chi2(x_batch, train_data_y)
+    #     #     scores.extend(chi2_scores)
+    #
+    #     chi2_selector = SelectKBest(chi2, k=10)
+    #     chi2_selector.fit(train_data_x_scaled, train_data_y)
+    #
+    #     # Save selected feature indices
+    #     chi2_features[target] = chi2_selector.get_support(indices=True)
+    #     print(f"Selected features for {target}: {chi2_features[target]}")
+    #
+    #     test_data_y = test_data[target].values
+    #     test_data_x = test_data.drop(target, axis=1).values
+    #
+    # results = {}
+    #
+    # for target_train in target_names:
+    #     selected_features = chi2_features[target_train]
+    #     x_train_selected = train_data.iloc[:, selected_features]
+    #
+    #     for target_test in target_names:
+    #         if target_train == target_test:
+    #             continue
+    #
+    #         # Train on selected features for one target
+    #         y_train = train_data[target_train]
+    #         model = CustomGaussianNB()
+    #         model.fit(x_train_selected, y_train)
+    #
+    #         # Test on other target
+    #         y_test = test_data[target_test]
+    #         x_test_selected = test_data.iloc[:, selected_features]
+    #         y_pred = model.predict(x_test_selected)
+    #
+    #         # Evaluate and save results
+    #         report = classification_report(y_test, y_pred, output_dict=True)
+    #         results[(target_train, target_test)] = report
+    #         print(f"Trained on {target_train}, evaluated on {target_test}:")
+    #         print(classification_report(y_test, y_pred))
+
 
 def lukasz_experiment_three_star_rating_ablation_study(train_data: pd.DataFrame, test_data: pd.DataFrame):
     for index in range(1, 6):

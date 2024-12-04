@@ -166,7 +166,7 @@ def lukasz_main():
     ]
     data = load_and_concatenate_csvs(file_list)
 
-    lukasz_test_experiment_three(data)
+    # lukasz_test_experiment_three(data)
 
     # model = load_model("../models/NB_no_2_stars_PCA100.pkl.gz")
     #
@@ -187,7 +187,59 @@ def lukasz_main():
     # else:
     #     print("Model performance needs improvement (score <= 0.5)")
 
-    # do_feature_selections(data)
+    do_feature_selections(data)
+
+
+def do_feature_selections(data):
+    feat_select_model_files = [
+        '../models/NB_CHI_stars_PCA100.pkl.gz',
+        '../models/NB_CHI_useful_PCA100.pkl.gz',
+        '../models/NB_CHI_funny_PCA100.pkl.gz',
+        '../models/NB_CHI_cool_PCA100.pkl.gz'
+    ]
+
+    models = []
+    for file in feat_select_model_files:
+        models.append(load_model(file))
+
+    feats = [  # stars, useful, funny, cool selected feature indices
+        [0, 1, 2, 3, 5, 7, 10, 11, 12, 17],
+        [0, 1, 2, 3, 4, 5, 6, 19, 21, 22],
+        [0, 1, 3, 4, 6, 8, 13, 19, 21, 33],
+        [0, 1, 2, 4, 6, 10, 19, 21, 22, 39]
+    ]
+    targets = ['stars', 'useful', 'funny', 'cool']
+
+    all_pred_y = []
+    all_test_data_y = []
+
+    for index, target in enumerate(targets):
+        test_data_y = data[targets].values
+        feature_indices = feats[index]
+        test_data_x = data.drop(targets, axis=1)
+        test_data_x = test_data_x.iloc[:, feature_indices]
+
+        pred_y = models[index].predict(test_data_x)
+
+        all_pred_y.append(pred_y.reshape(-1, 1))  # Ensure 2D shape for stacking
+        all_test_data_y.append(test_data_y[:, index].reshape(-1, 1))
+
+    # Combine all predictions and true values along the column axis
+    combined_pred_y = np.column_stack(all_pred_y)
+    combined_test_data_y = np.column_stack(all_test_data_y)
+
+    evaluation_results = evaluate_model(combined_test_data_y, combined_pred_y, True)
+
+    print("Evaluation Results:")
+    for metric, value in evaluation_results.items():
+        if metric != 'continuous':
+            print(f"{metric}: {value:.4f}")
+
+    # Check if the combined score is greater than 0.5
+    if evaluation_results['combined_score'] > 0.5:
+        print("Model performance is satisfactory (score > 0.5)")
+    else:
+        print("Model performance needs improvement (score <= 0.5)")
 
 
 def lukasz_test_experiment_three(data):

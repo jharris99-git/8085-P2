@@ -211,6 +211,7 @@ def kyle_main():
              'train_embeddings_4.csv.gz',
              'train_embeddings_5.csv.gz'
              ]
+
     train_data = load_and_concatenate_csvs(files)
     test_data = load_and_concatenate_csvs(['test_embeddings_0.csv.gz'])
     print("Files concatenated")
@@ -429,7 +430,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'L'
+    NAME = 'K'
 
     match NAME:
         case 'J':

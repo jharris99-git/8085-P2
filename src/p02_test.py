@@ -133,14 +133,13 @@ def joe_main():
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Kyle's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def kyle_main():
+    model = load_model("../models/SVM_PCA100.pkl.gz")
+
     file_list = [
         'test_embeddings_0.csv.gz',
         'test_embeddings_1.csv.gz'
     ]
     data = load_and_concatenate_csvs(file_list)
-    model = load_model("../models/SVM_PCA100.pkl.gz")
-    # SVM.use_model(model, data)
-    # model.eval()
     test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
     test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
     pred_y = model.predict(test_data_x)
@@ -150,12 +149,45 @@ def kyle_main():
         if metric != 'continuous':
             print(f"{metric}: {value:.4f}")
 
-    # Check if the combined score is greater than 0.5
-    if evaluation_results['combined_score'] > 0.5:
-        print("Model performance is satisfactory (score > 0.5)")
-    else:
-        print("Model performance needs improvement (score <= 0.5)")
-
+    #Trip Advisor
+    # data = load_and_concatenate_csvs(['tripadvisor_hotel_reviews_embeddings_0.csv.gz'])
+    # test_data_y = data[['stars']].values
+    # test_data_x = data.drop(['stars'], axis=1)
+    # pred_y = model.predict(test_data_x)
+    #
+    # true_stars = test_data_y[:, 0]
+    # pred_stars = pred_y[:, 0]
+    #
+    # true_stars = true_stars.astype(int)
+    # pred_stars = np.round(pred_stars).astype(int)
+    #
+    # stars_mae = mean_absolute_error(true_stars, pred_stars)
+    #
+    # max_star_error = 5
+    # normalized_stars_mae = stars_mae / max_star_error
+    # stars_mae_score = 1 - normalized_stars_mae
+    #
+    # evaluation_results = {
+    #     'stars_mae_score': stars_mae_score
+    # }
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
+    #
+    # stars_accuracy = accuracy_score(true_stars, pred_stars)
+    # stars_f1 = f1_score(true_stars, pred_stars, average='weighted')
+    #
+    # evaluation_results =  {
+    #     'stars_accuracy': stars_accuracy,
+    #     'stars_f1': stars_f1,
+    # }
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
@@ -276,13 +308,7 @@ def lukasz_test_experiment_three(data):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
 
-
-    # base_data = pd.read_csv('../datasets/', low_memory=False)
-
-    # base_data = process_data(base_data) # preprocess
-
-    NAME = 'L'
-
+    NAME = 'K'
     match NAME:
         case 'J':
             joe_main()

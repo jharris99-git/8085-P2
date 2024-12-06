@@ -22,8 +22,8 @@ def load_model(filename):
 
 def find_robust_max_discrepancy(true_others, pred_others, percentile=99):
     abs_diff = np.abs(true_others - pred_others)
-    total_diff_per_sample = np.sum(abs_diff, axis=1)
-    robust_max = np.percentile(total_diff_per_sample, percentile)
+    # total_diff_per_sample = np.sum(abs_diff, axis=1)
+    robust_max = np.percentile(abs_diff.T, percentile)
     return robust_max
 
 
@@ -33,15 +33,28 @@ def robust_log_normalized_mae(true_others, pred_others, mae, percentile=99):
     return 1 - normalized_mae
 
 
-def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
+def evaluate_model(true_values, predicted_values, continuous, weights=[1,1,1,1]):
     # Separate stars from other metrics
     true_stars = true_values[:, 0]
     pred_stars = predicted_values[:, 0]
-    true_others = true_values[:, 1:]
-    pred_others = predicted_values[:, 1:]
+    true_useful = true_values[:, 1]
+    pred_useful = predicted_values[:, 1]
+    true_funny = true_values[:, 2]
+    pred_funny = predicted_values[:, 2]
+    true_cool= true_values[:, 3]
+    pred_cool = predicted_values[:, 3]
 
-    mae = mean_absolute_error(true_others, pred_others)
-    mae_score = robust_log_normalized_mae(true_others, pred_others, mae)
+    mae_useful = mean_absolute_error(true_useful, pred_useful)
+    mae_score_u = robust_log_normalized_mae(true_useful, pred_useful, mae_useful)
+
+    mae_funny = mean_absolute_error(true_funny, pred_funny)
+    mae_score_f = robust_log_normalized_mae(true_funny, pred_funny, mae_funny)
+
+    mae_cool = mean_absolute_error(true_cool, pred_cool)
+    mae_score_c = robust_log_normalized_mae(true_cool, pred_cool, mae_cool)
+
+
+
 
     if continuous:
         stars_mae = mean_absolute_error(true_stars, pred_stars)
@@ -50,12 +63,14 @@ def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
         normalized_stars_mae = stars_mae / max_star_error
         stars_mae_score = 1 - normalized_stars_mae
 
-        combined_score = (weights[0] * stars_mae_score + weights[1] * mae_score) / sum(weights)
+        combined_score = (weights[0] * stars_mae_score + weights[1] * mae_score_u + weights[2] * mae_score_f + weights[3] * mae_score_c ) / sum(weights)
 
         return {
             'continuous': continuous,
             'stars_mae_score': stars_mae_score,
-            'mae_score': mae_score,
+            'mae_score_useful': mae_score_u,
+            'mae_score_funny': mae_score_f,
+            'mae_score_cool': mae_score_c,
             'combined_score': combined_score
         }
 
@@ -66,13 +81,15 @@ def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
         stars_accuracy = accuracy_score(true_stars, pred_stars)
         stars_f1 = f1_score(true_stars, pred_stars, average='weighted')
 
-        combined_score = (weights[0] * ((stars_accuracy + stars_f1) / 2) + weights[1] * mae_score) / sum(weights)
+        combined_score = (weights[0] * ((stars_accuracy + stars_f1) / 2) + weights[1] * ( mae_score_u + mae_score_f + mae_score_c )) / sum(weights)
 
         return {
             'continuous': continuous,
             'stars_accuracy': stars_accuracy,
             'stars_f1': stars_f1,
-            'mae_score': mae_score,
+            'mae_score_useful': mae_score_u,
+            'mae_score_funny': mae_score_f,
+            'mae_score_cool': mae_score_c,
             'combined_score': combined_score
         }
 

@@ -4,6 +4,9 @@ from p01_train import csv_file_to_nparray
 from p02_test import test_model, evaluate_model
 from NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm, ReviewNetSmall
 from src.NeuralNets import ReviewNetBERT
+import p02_test
+from p01_train import csv_file_to_nparray, ReviewNet, load_and_concatenate_csvs, CustomGaussianNB
+from p02_test import test_model, evaluate_model, load_model
 
 torch.set_default_dtype(torch.float32)
 
@@ -45,8 +48,37 @@ if __name__ == '__main__':
                 if metric != 'continuous':
                     print(f"{metric}: {value:.4f}")
         if choice in ['2', 'Naive-Bayes', '2.', 'nb']:
-            break
+            cont_choice = input(
+                'Would you like Stars to be evaluated as (a) discrete or (b) continuous between [0,5]: (a,b)')
+            data = load_and_concatenate_csvs([file])
+            test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+            test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+
+            model = load_model("../models/NB_PCA100.pkl.gz")
+            pred_y = model.predict(test_data_x)
+            evaluation_results = evaluate_model(test_data_y, pred_y, True)
+
+            print("Evaluation Results:")
+            for metric, value in evaluation_results.items():
+                if metric != 'continuous':
+                    print(f"{metric}: {value:.4f}")
         if choice in ['3', 'SVM', '3.', 'Support Vector Machine']:
+            cont_choice = input(
+                'Would you like Stars to be evaluated as (a) discrete or (b) continuous between [0,5]: (a,b)')
+            cont = True if cont_choice == 'b' else False
+
+            data = load_and_concatenate_csvs([file])
+            test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+            test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+
+            model = load_model("../models/SVM_PCA100.pkl.gz")
+            pred_y = model.predict(test_data_x)
+            evaluation_results = evaluate_model(test_data_y, pred_y, cont)
+
+            print("Evaluation Results:")
+            for metric, value in evaluation_results.items():
+                if metric != 'continuous':
+                    print(f"{metric}: {value:.4f}")
             break
 
         choice = str(input('\n\nWould you like to continue? (Y/N) ')).lower().strip()

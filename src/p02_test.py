@@ -138,14 +138,13 @@ def joe_main():
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Kyle's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def kyle_main():
+    model = load_model("../models/SVM_PCA100.pkl.gz")
+
     file_list = [
         'test_embeddings_0.csv.gz',
         'test_embeddings_1.csv.gz'
     ]
     data = load_and_concatenate_csvs(file_list)
-    model = load_model("../models/SVM_PCA100.pkl.gz")
-    # SVM.use_model(model, data)
-    # model.eval()
     test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
     test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
     pred_y = model.predict(test_data_x)
@@ -155,28 +154,118 @@ def kyle_main():
         if metric != 'continuous':
             print(f"{metric}: {value:.4f}")
 
-    # Check if the combined score is greater than 0.5
-    if evaluation_results['combined_score'] > 0.5:
-        print("Model performance is satisfactory (score > 0.5)")
-    else:
-        print("Model performance needs improvement (score <= 0.5)")
-
+    #Trip Advisor
+    # data = load_and_concatenate_csvs(['tripadvisor_hotel_reviews_embeddings_0.csv.gz'])
+    # test_data_y = data[['stars']].values
+    # test_data_x = data.drop(['stars'], axis=1)
+    # pred_y = model.predict(test_data_x)
+    #
+    # true_stars = test_data_y[:, 0]
+    # pred_stars = pred_y[:, 0]
+    #
+    # true_stars = true_stars.astype(int)
+    # pred_stars = np.round(pred_stars).astype(int)
+    #
+    # stars_mae = mean_absolute_error(true_stars, pred_stars)
+    #
+    # max_star_error = 5
+    # normalized_stars_mae = stars_mae / max_star_error
+    # stars_mae_score = 1 - normalized_stars_mae
+    #
+    # evaluation_results = {
+    #     'stars_mae_score': stars_mae_score
+    # }
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
+    #
+    # stars_accuracy = accuracy_score(true_stars, pred_stars)
+    # stars_f1 = f1_score(true_stars, pred_stars, average='weighted')
+    #
+    # evaluation_results =  {
+    #     'stars_accuracy': stars_accuracy,
+    #     'stars_f1': stars_f1,
+    # }
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Luke's Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def lukasz_main():
     file_list = [
-        'test_embeddings_1.csv.gz'  # ,
-        # 'test_embeddings_1.csv.gz'
+        'test_embeddings_0.csv.gz',
+        'test_embeddings_1.csv.gz'
     ]
     data = load_and_concatenate_csvs(file_list)
-    model = load_model("../models/NB_PCA100.pkl.gz")
 
-    test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
-    test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+    # lukasz_test_experiment_three(data)
 
-    pred_y = model.predict(test_data_x)
-    evaluation_results = evaluate_model(test_data_y, pred_y, True)
+    # model = load_model("../models/NB_no_2_stars_PCA100.pkl.gz")
+    #
+    # test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+    # test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+    #
+    # pred_y = model.predict(test_data_x)
+    # evaluation_results = evaluate_model(test_data_y, pred_y, True)
+    #
+    # print("Evaluation Results:")
+    # for metric, value in evaluation_results.items():
+    #     if metric != 'continuous':
+    #         print(f"{metric}: {value:.4f}")
+    #
+    # # Check if the combined score is greater than 0.5
+    # if evaluation_results['combined_score'] > 0.5:
+    #     print("Model performance is satisfactory (score > 0.5)")
+    # else:
+    #     print("Model performance needs improvement (score <= 0.5)")
+
+    do_feature_selections(data)
+
+
+def do_feature_selections(data):
+    feat_select_model_files = [
+        '../models/NB_CHI_stars_PCA100.pkl.gz',
+        '../models/NB_CHI_useful_PCA100.pkl.gz',
+        '../models/NB_CHI_funny_PCA100.pkl.gz',
+        '../models/NB_CHI_cool_PCA100.pkl.gz'
+    ]
+
+    models = []
+    for file in feat_select_model_files:
+        models.append(load_model(file))
+
+    feats = [  # stars, useful, funny, cool selected feature indices
+        [0, 1, 2, 3, 5, 7, 10, 11, 12, 17],
+        [0, 1, 2, 3, 4, 5, 6, 19, 21, 22],
+        [0, 1, 3, 4, 6, 8, 13, 19, 21, 33],
+        [0, 1, 2, 4, 6, 10, 19, 21, 22, 39]
+    ]
+    targets = ['stars', 'useful', 'funny', 'cool']
+
+    all_pred_y = []
+    all_test_data_y = []
+
+    for index, target in enumerate(targets):
+        test_data_y = data[targets].values
+        feature_indices = feats[index]
+        test_data_x = data.drop(targets, axis=1)
+        test_data_x = test_data_x.iloc[:, feature_indices]
+
+        pred_y = models[index].predict(test_data_x)
+
+        all_pred_y.append(pred_y.reshape(-1, 1))  # Ensure 2D shape for stacking
+        all_test_data_y.append(test_data_y[:, index].reshape(-1, 1))
+
+    # Combine all predictions and true values along the column axis
+    combined_pred_y = np.column_stack(all_pred_y)
+    combined_test_data_y = np.column_stack(all_test_data_y)
+
+    evaluation_results = evaluate_model(combined_test_data_y, combined_pred_y, True)
 
     print("Evaluation Results:")
     for metric, value in evaluation_results.items():
@@ -188,6 +277,38 @@ def lukasz_main():
         print("Model performance is satisfactory (score > 0.5)")
     else:
         print("Model performance needs improvement (score <= 0.5)")
+
+
+def lukasz_test_experiment_three(data):
+    models = [
+        load_model("../models/NB_no_1_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_2_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_3_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_4_stars_PCA100.pkl.gz"),
+        load_model("../models/NB_no_5_stars_PCA100.pkl.gz")
+    ]
+
+    test_data_y = data[['stars', 'useful', 'funny', 'cool']].values
+    test_data_x = data.drop(['stars', 'useful', 'funny', 'cool'], axis=1)
+
+    index = 1
+    for model in models:
+        pred_y = model.predict(test_data_x)
+        evaluation_results = evaluate_model(test_data_y, pred_y, True)
+
+        print(f"Evaluation Results (model trained without {index} star ratings):")
+        for metric, value in evaluation_results.items():
+            if metric != 'continuous':
+                print(f"{metric}: {value:.4f}")
+
+        # Check if the combined score is greater than 0.5
+        if evaluation_results['combined_score'] > 0.5:
+            print("Model performance is satisfactory (score > 0.5)")
+        else:
+            print("Model performance needs improvement (score <= 0.5)")
+
+        index += 1
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 if __name__ == '__main__':
@@ -197,7 +318,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'J'
+    NAME = ''
 
     match NAME:
         case 'J':

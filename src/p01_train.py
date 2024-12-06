@@ -3,12 +3,14 @@ import csv
 import gzip
 import os
 import pickle
+from pydoc import classname
+
 import pandas as pd
 from torch import nn, optim
 from tqdm import tqdm
 
 import SVM
-from src.NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm
+from src.NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm, ReviewNetSmall, ReviewNetBERT
 from src.SVM import train_model, use_model
 
 import numpy as np
@@ -32,7 +34,7 @@ def save_model(model, filename):
 
 
 def load_pca_model():
-    with gzip.open('../models/PCA.pkl.gz', 'rb') as f:
+    with gzip.open('../models/pca_model.pkl.gz', 'rb') as f:
         return pickle.load(f)
 
 
@@ -71,7 +73,7 @@ def convert_to_cuda_tensor(np_array):
 # ~~~~~~~~~~~~~~~~~~~~~~~~ Joe's  Functions ~~~~~~~~~~~~~~~~~~~~~~~~ #
 
 def joe_main():
-    model = ReviewNetLarge(dropout_rate=0.2)
+    model = ReviewNetBERT(dropout_rate=0.2)
     optimizer = optim.Adam(model.parameters())
 
     file_list = [
@@ -99,9 +101,9 @@ def joe_main():
     else:
         start_epoch = 0
 
-    # torch.save(model.state_dict(), f'../models/best_model_nn2.pth')
+    torch.save(model.state_dict(), f'../models/best_model.pth') # large normalized
 
-    train_nn(model, optimizer, file_list, start_epoch, patience=5)
+    train_nn(model, optimizer, file_list, start_epoch, patience=10)
 
 
 # Modified/made more complex for Model 2+
@@ -115,6 +117,8 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
     patience_counter = 0
     best_model = None
 
+    predictor_count = 100
+
     data = None
     for filename in file_list:
         file_data = csv_file_to_nparray(filename)
@@ -123,6 +127,7 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
         else:
             data = np.concatenate((np.array(data), np.array(file_data)), axis=0)
 
+    pca = load_pca_model()
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0.0
@@ -133,7 +138,9 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
         pbar = tqdm(range(0, len(data), batch_size), desc=f"Epoch {epoch+1}/{num_epochs}")
         for i in pbar:
             batch = data[i:i+batch_size]
-            inputs = convert_to_cuda_tensor(batch[:, :100])
+            inputs = batch[:, :100]
+            if type(model) == type(ReviewNetBERT()):
+                inputs = convert_to_cuda_tensor(pca_inverse_transform(pca, inputs))
             targets = convert_to_cuda_tensor(batch[:, 100:])
 
             optimizer.zero_grad()
@@ -174,7 +181,7 @@ def train_nn(model, optimizer, file_list, start_epoch=0, batch_size=64, num_epoc
 
     # Save the best model
     if best_model is not None:
-        torch.save(best_model, f'../models/best_model_nn2.pth')
+        torch.save(best_model, f'../models/best_model_nn5.pth')
 
 
 def ordinal_loss(predictions, targets):
@@ -315,7 +322,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'K'
+    NAME = 'J'
 
     match NAME:
         case 'J':

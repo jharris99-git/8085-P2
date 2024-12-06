@@ -7,9 +7,10 @@ import SVM
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_squared_error
 from torch import optim, nn
 
-from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray, load_and_concatenate_csvs
+from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray, load_and_concatenate_csvs, load_pca_model
 from p01_train import CustomGaussianNB
-
+from src.NeuralNets import ReviewNetLargeNorm, ReviewNetLarge, ReviewNetSmall, ReviewNetBERT
+from src.p01_train import pca_inverse_transform
 
 torch.set_default_dtype(torch.float32)
 # ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -80,8 +81,9 @@ def evaluate_model(true_values, predicted_values, continuous, weights=[1, 3]):
 
 def test_model(model, test_data, if_cuda):
     model.eval()
+    pca = load_pca_model()
     with torch.no_grad():
-        inputs = convert_to_cuda_tensor(test_data[:, :100])
+        inputs = convert_to_cuda_tensor(pca_inverse_transform(pca, test_data[:, :100]))
         outputs = model(inputs)
         if if_cuda:
             return outputs.cpu().numpy()
@@ -90,14 +92,14 @@ def test_model(model, test_data, if_cuda):
 
 
 def joe_main():
-    model = ReviewNet()
+    model = ReviewNetBERT()
 
     file_list = [
         'test_embeddings_0.csv.gz',
         'test_embeddings_1.csv.gz'
     ]
 
-    model.load_state_dict(torch.load(f'../models/best_model.pth', weights_only=True))
+    model.load_state_dict(torch.load(f'../models/best_model_nn5.pth', weights_only=True))
     model.eval()
     model.to('cuda')
     tensor = None
@@ -108,8 +110,11 @@ def joe_main():
         else:
             tensor = np.concatenate((np.array(tensor), np.array(file_tensor)), axis=0)
     with torch.no_grad():
-        inputs = convert_to_cuda_tensor(tensor[:, :100]).float()
-        targets = convert_to_cuda_tensor(tensor[:, 100:]).float()
+        pca = load_pca_model()
+        inputs = tensor[:, :100]
+        if type(model) == type(ReviewNetBERT()):
+            inputs = convert_to_cuda_tensor(pca_inverse_transform(pca, inputs))
+        targets = convert_to_cuda_tensor(tensor[:, 100:])
         outputs = model(inputs)
 
         true_values = targets.cpu().numpy()
@@ -192,7 +197,7 @@ if __name__ == '__main__':
 
     # base_data = process_data(base_data) # preprocess
 
-    NAME = 'L'
+    NAME = 'J'
 
     match NAME:
         case 'J':

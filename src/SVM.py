@@ -1,9 +1,8 @@
 import pandas as pd
-from sklearn.linear_model import SGDClassifier
 
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.svm import SVC, LinearSVC
+from sklearn.svm import LinearSVC
 
 
 def train_model(train_data: pd.DataFrame):

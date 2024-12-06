@@ -1,7 +1,7 @@
 import torch
 
 from NeuralNets import ReviewNetBERT
-from p01_train import csv_file_to_nparray, load_and_concatenate_csvs
+from p01_train import csv_file_to_nparray, load_and_concatenate_csvs, CustomGaussianNB # prevent false 'unused import' flag
 from p02_test import test_model, evaluate_model, load_model
 
 torch.set_default_dtype(torch.float32)
@@ -43,6 +43,7 @@ if __name__ == '__main__':
             for metric, value in evaluation_results.items():
                 if metric != 'continuous':
                     print(f"{metric}: {value:.4f}")
+
         if choice in ['2', 'Naive-Bayes', '2.', 'nb']:
             cont_choice = input(
                 'Would you like Stars to be evaluated as (a) discrete or (b) continuous between [0,5]: (a,b)')
@@ -59,6 +60,7 @@ if __name__ == '__main__':
             for metric, value in evaluation_results.items():
                 if metric != 'continuous':
                     print(f"{metric}: {value:.4f}")
+
         if choice in ['3', 'SVM', '3.', 'Support Vector Machine']:
             cont_choice = input(
                 'Would you like Stars to be evaluated as (a) discrete or (b) continuous between [0,5]: (a,b)')
@@ -76,7 +78,6 @@ if __name__ == '__main__':
             for metric, value in evaluation_results.items():
                 if metric != 'continuous':
                     print(f"{metric}: {value:.4f}")
-            break
 
         choice = str(input('\n\nWould you like to continue? (Y/N) ')).lower().strip()
         if choice in ['n', 'no', '0']:

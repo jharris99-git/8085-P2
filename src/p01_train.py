@@ -406,7 +406,7 @@ class CustomGaussianNB(BaseEstimator, ClassifierMixin):
         debug_sample_loops = 0
         for cls, stats in self.class_stats.items():
             mean, var, prior = stats["mean"], stats["var"], stats["prior"]
-            print(debug_sample_loops)
+            # print(debug_sample_loops)
 
             # Vectorized computation for likelihood
             log_likelihood = -0.5 * np.sum(np.log(2 * np.pi * var))  # Normalization

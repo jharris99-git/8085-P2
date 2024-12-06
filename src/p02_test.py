@@ -64,7 +64,7 @@ def evaluate_model(true_values, predicted_values, continuous=True, weights=(1,1,
 
         return {
             'continuous': continuous,
-            'stars_mae_score': stars_mae_score,
+            'mae_score_stars': stars_mae_score,
             'mae_score_useful': mae_score_u,
             'mae_score_funny': mae_score_f,
             'mae_score_cool': mae_score_c,

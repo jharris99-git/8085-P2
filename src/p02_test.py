@@ -33,7 +33,7 @@ def robust_log_normalized_mae(true_others, pred_others, mae, percentile=99):
     return 1 - normalized_mae
 
 
-def evaluate_model(true_values, predicted_values, continuous, weights=[1,1,1,1]):
+def evaluate_model(true_values, predicted_values, continuous, weights=(1,1,1,1)):
     # Separate stars from other metrics
     true_stars = true_values[:, 0]
     pred_stars = predicted_values[:, 0]

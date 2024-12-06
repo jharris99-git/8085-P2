@@ -10,3 +10,6 @@ datasets/
 models/
 !models/placeholder.pkl
 !models/pca_model.pkl.gz
+!models/NN_BERT768.pth
+!models/SVM_PCA100.pkl.gz
+!models/NB_PCA100.pkl.gz

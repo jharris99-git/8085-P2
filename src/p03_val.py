@@ -1,10 +1,6 @@
 import torch
 
-from p01_train import csv_file_to_nparray
-from p02_test import test_model, evaluate_model
-from NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm, ReviewNetSmall
 from src.NeuralNets import ReviewNetBERT
-import p02_test
 from p01_train import csv_file_to_nparray, ReviewNet, load_and_concatenate_csvs, CustomGaussianNB
 from p02_test import test_model, evaluate_model, load_model
 
@@ -31,7 +27,7 @@ if __name__ == '__main__':
             tensor = csv_file_to_nparray(file)
 
             model = ReviewNetBERT()
-            model.load_state_dict(torch.load(f'../models/best_model_nn5.pth', weights_only=True))
+            model.load_state_dict(torch.load(f'../models/NN_BERT768.pth', weights_only=True))
             model.eval()
 
             is_cuda = True if torch.cuda.is_available() else False

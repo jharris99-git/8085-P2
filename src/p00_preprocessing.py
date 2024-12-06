@@ -4,8 +4,8 @@ import pickle
 from math import ceil
 
 import numpy as np
-import torch
 import pandas as pd
+import torch
 from sklearn.decomposition import IncrementalPCA
 from transformers import BertTokenizer, BertModel
 

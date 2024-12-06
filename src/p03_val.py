@@ -1,7 +1,7 @@
 import torch
 
-from src.NeuralNets import ReviewNetBERT
-from p01_train import csv_file_to_nparray, ReviewNet, load_and_concatenate_csvs, CustomGaussianNB
+from NeuralNets import ReviewNetBERT
+from p01_train import csv_file_to_nparray, load_and_concatenate_csvs
 from p02_test import test_model, evaluate_model, load_model
 
 torch.set_default_dtype(torch.float32)

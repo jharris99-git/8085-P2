@@ -1,16 +1,13 @@
-# use *validation* not test here
-import numpy as np
-import torch
 import gzip
 import pickle
-import SVM
-from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, mean_squared_error
-from torch import optim, nn
 
-from p01_train import convert_to_cuda_tensor, ReviewNet, csv_file_to_nparray, load_and_concatenate_csvs, load_pca_model
-from p01_train import CustomGaussianNB
-from src.NeuralNets import ReviewNetLargeNorm, ReviewNetLarge, ReviewNetSmall, ReviewNetBERT
-from src.p01_train import pca_inverse_transform
+import numpy as np
+import torch
+from sklearn.metrics import mean_absolute_error, accuracy_score, f1_score
+
+from NeuralNets import ReviewNetBERT
+from p01_train import load_pca_model, convert_to_cuda_tensor, pca_inverse_transform, csv_file_to_nparray, \
+    load_and_concatenate_csvs
 
 torch.set_default_dtype(torch.float32)
 # ~~~~~~~~~~~~~~~~~~~~~~~ General  Functions ~~~~~~~~~~~~~~~~~~~~~~~ #

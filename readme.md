@@ -17,7 +17,8 @@ Linux instructions:
 3. Run `virtualenv -p python3 p2`.
 4. Run `source p2/bin/activate`.
 5. Run `sudo pip3 install -r requirements.txt`.
-6. Run `deactivate`.
+6. Install the supported version of torch for your hardware.
+7. Run `deactivate`.
 
 ## Using the Project
 
@@ -35,8 +36,7 @@ Linux instructions:
 #### Execution
 
 1. Make sure the above commands have been executed.
-<!--2. Run `python3 src/NIDS.py <args>`-->
-\* Note that different operating systems may use different slash separators/
+2. Run `03_val.py` from within an IDE.
 
 #### Close
 

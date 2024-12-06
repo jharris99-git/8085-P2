@@ -1,27 +1,21 @@
-# define training code
 import csv
 import gzip
 import os
 import pickle
-from pydoc import classname
-
-import pandas as pd
-from sklearn.feature_selection import SelectKBest, chi2
-from torch import nn, optim
-from tqdm import tqdm
-
-import SVM
-from src.NeuralNets import ReviewNet, ReviewNetLarge, ReviewNetLargeNorm, ReviewNetSmall, ReviewNetBERT
-from src.SVM import train_model, use_model
 
 import numpy as np
+import pandas as pd
 import torch
-
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.metrics import classification_report
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import MinMaxScaler
+from torch import optim, nn
+from tqdm import tqdm
 
+from NeuralNets import ReviewNetBERT
+from SVM import train_model, use_model
 
 torch.set_default_dtype(torch.float32)
 
